@@ -1,0 +1,11 @@
+plan.md
+
+
+**/.env
+**/tmp
+**/logs
+**/email_pilot/logs
+**/email_pilot/tmp
+**/email_pilot/logs
+**/email_pilot/tmp
+**/email_pilot/.env
