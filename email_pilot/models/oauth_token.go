@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// OAuthToken represents the structure for storing OAuth tokens.
 type OAuthToken struct {
 	ID           uint      `gorm:"primaryKey"`
 	UserEmail    string    `gorm:"unique;not null"`

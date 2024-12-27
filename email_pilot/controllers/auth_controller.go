@@ -12,20 +12,16 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// AuthController handles the OAuth authentication flow.
 func AuthController(c *gin.Context) {
 	oauthConfig := services.GetOAuthConfig()
 
-	// Step 1: Redirect the user to Google's OAuth 2.0 consent screen.
 	authURL := oauthConfig.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 	c.Redirect(http.StatusTemporaryRedirect, authURL)
 }
 
-// CallbackController handles the callback from Google's OAuth 2.0.
 func CallbackController(c *gin.Context) {
 	oauthConfig := services.GetOAuthConfig()
 
-	// Step 2: Exchange the authorization code for an access token.
 	code := c.Query("code")
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization code is missing"})
@@ -39,9 +35,8 @@ func CallbackController(c *gin.Context) {
 		return
 	}
 
-	// Step 3: Save the token in the database for later use.
 	oauthToken := &models.OAuthToken{
-		UserEmail:    "arpitnath@gmail.com",
+		UserEmail:    "arpitnath@gmail.com", // TODO: get user email from google: just for testing
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		Expiry:       token.Expiry,

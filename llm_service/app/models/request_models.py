@@ -2,8 +2,8 @@ from pydantic import BaseModel
 
 
 class SummarizationRequest(BaseModel):
-    prompt: str  # The text to summarize
+    prompt: str
 
 
 class CategorizationRequest(BaseModel):
-    prompt: str  # The text to categorize
+    prompt: str

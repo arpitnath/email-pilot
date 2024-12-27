@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from app.routers import summarize, categorize
 
-# Initialize FastAPI app
+
 app = FastAPI(
     title="LLM Service",
     description="Service for Summarization and Categorization using LLMs",
     version="1.0.0",
 )
 
-# Include routes
+
 app.include_router(summarize.router, prefix="/api")
 app.include_router(categorize.router, prefix="/api")
 

@@ -16,13 +16,11 @@ type EmailService struct {
 	OauthConfig *oauth2.Config
 }
 
-// FetchEmails retrieves a specified number of emails from the Gmail API
 func (e *EmailService) FetchEmails(limit int) ([]map[string]string, error) {
 	if limit <= 0 {
 		return nil, errors.New("invalid email limit")
 	}
 
-	// Create Gmail client
 	ctx := context.Background()
 	client := e.OauthConfig.Client(ctx, e.Token)
 	gmailService, err := gmail.NewService(ctx, option.WithHTTPClient(client))
@@ -30,14 +28,12 @@ func (e *EmailService) FetchEmails(limit int) ([]map[string]string, error) {
 		return nil, err
 	}
 
-	// Fetch email list
 	user := "me"
 	msgs, err := gmailService.Users.Messages.List(user).MaxResults(int64(limit)).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	// Process each email
 	var emails []map[string]string
 	for _, msg := range msgs.Messages {
 		message, err := gmailService.Users.Messages.Get(user, msg.Id).Format("full").Do()
@@ -46,7 +42,6 @@ func (e *EmailService) FetchEmails(limit int) ([]map[string]string, error) {
 			continue
 		}
 
-		// Decode subject and body
 		var subject string
 		for _, header := range message.Payload.Headers {
 			if header.Name == "Subject" {

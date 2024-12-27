@@ -2,8 +2,8 @@ from pydantic import BaseModel
 
 
 class SummarizationResponse(BaseModel):
-    summary: str  # The summarized text
+    summary: str
 
 
 class CategorizationResponse(BaseModel):
-    category: str  # The category of the text
+    category: str
