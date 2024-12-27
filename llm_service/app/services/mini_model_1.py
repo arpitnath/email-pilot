@@ -1,14 +1,12 @@
-from transformers import pipeline
+from app.services.model_loader import get_classification_pipeline
 
-# Load text classification pipeline
-classification_pipeline = pipeline(
-    "text-classification", model="distilbert-base-uncased"
-)
+# Initialize classification pipeline
+classification_pipeline = get_classification_pipeline()
 
 
 def categorize_text(prompt: str) -> str:
     """
-    Categorize the given text using a mini LLM.
+    Categorize the given text using the classification pipeline.
     """
     result = classification_pipeline(prompt)
     return result[0]["label"]

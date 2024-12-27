@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import summarize, categorize
+from app.routers import summarize, categorize, sentiment_analyzer
 
 
 app = FastAPI(
@@ -11,6 +11,7 @@ app = FastAPI(
 
 app.include_router(summarize.router, prefix="/api")
 app.include_router(categorize.router, prefix="/api")
+app.include_router(sentiment_analyzer.router, prefix="/api")
 
 
 # Health check route

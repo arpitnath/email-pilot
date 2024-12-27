@@ -7,3 +7,7 @@ class SummarizationRequest(BaseModel):
 
 class CategorizationRequest(BaseModel):
     prompt: str
+
+
+class SentimentAnalysisRequest(BaseModel):
+    prompt: str

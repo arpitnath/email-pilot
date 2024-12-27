@@ -7,3 +7,7 @@ class SummarizationResponse(BaseModel):
 
 class CategorizationResponse(BaseModel):
     category: str
+
+
+class SentimentAnalysisResponse(BaseModel):
+    sentiment: str

@@ -1,12 +1,12 @@
-from transformers import pipeline
+from app.services.model_loader import get_sentiment_pipeline
 
-# Load sentiment analysis pipeline
-sentiment_pipeline = pipeline("sentiment-analysis")
+# Initialize sentiment pipeline
+sentiment_pipeline = get_sentiment_pipeline()
 
 
 def analyze_sentiment(prompt: str) -> str:
     """
-    Analyze the sentiment of the given text using a mini LLM.
+    Analyze the sentiment of the given text using the sentiment pipeline.
     """
     result = sentiment_pipeline(prompt)
     return result[0]["label"]
