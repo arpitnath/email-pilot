@@ -1,17 +1,18 @@
 package orchestration
 
 import (
+	"fmt"
 	"log"
 	"sync"
+	"time"
 )
 
 // OrchestrationEngine represents the core of the orchestration system
 type OrchestrationEngine struct {
-	queue      *TaskQueue     // Task queue
-	workerPool *WorkerPool    // Worker pool
-	isRunning  bool           // Indicates if the engine is running
-	mu         sync.Mutex     // Mutex for thread-safe access
-	wg         sync.WaitGroup // WaitGroup for worker completion
+	queue      *TaskQueue  // Task queue
+	workerPool *WorkerPool // Worker pool
+	isRunning  bool        // Indicates if the engine is running
+	mu         sync.Mutex  // Mutex for thread-safe access
 }
 
 // NewOrchestrationEngine creates a new orchestration engine
@@ -26,6 +27,7 @@ func NewOrchestrationEngine(queueCapacity, workerCount int) *OrchestrationEngine
 	}
 }
 
+// Start starts the orchestration engine
 func (oe *OrchestrationEngine) Start() {
 	oe.mu.Lock()
 	defer oe.mu.Unlock()
@@ -41,6 +43,7 @@ func (oe *OrchestrationEngine) Start() {
 	log.Println("Orchestration engine started.")
 }
 
+// Stop stops the orchestration engine
 func (oe *OrchestrationEngine) Stop() {
 	oe.mu.Lock()
 	defer oe.mu.Unlock()
@@ -82,4 +85,35 @@ func (oe *OrchestrationEngine) QueueSize() int {
 	oe.mu.Lock()
 	defer oe.mu.Unlock()
 	return oe.queue.Size()
+}
+
+// Run executes a batch of tasks and waits for them to complete
+func (oe *OrchestrationEngine) Run(tasks []*Task) ([]string, error) {
+	oe.Start()
+
+	for _, task := range tasks {
+		if err := oe.AddTask(task); err != nil {
+			return nil, fmt.Errorf("failed to add task %s: %w", task.ID, err)
+		}
+	}
+
+	// Wait for all tasks to complete
+	for oe.QueueSize() > 0 {
+		log.Printf("Waiting for queue to empty... Current size: %d\n", oe.QueueSize())
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	oe.Stop()
+
+	// Collect results
+	var results []string
+	for _, task := range tasks {
+		if task.State == Completed {
+			results = append(results, task.Result)
+		} else {
+			log.Printf("Task %s did not complete successfully. State: %s", task.ID, task.State)
+		}
+	}
+
+	return results, nil
 }

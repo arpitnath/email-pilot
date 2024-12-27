@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -23,13 +24,14 @@ func (q *TaskQueue) Enqueue(task *Task) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	select {
-	case q.queue <- task:
-		q.size++
-		return nil
-	default:
-		return errors.New("task queue is full")
+	if q.size >= cap(q.queue) {
+		return errors.New("queue is full")
 	}
+
+	q.queue <- task
+	q.size++
+	log.Printf("Task %s added to the queue. Current queue size: %d\n", task.ID, q.size)
+	return nil
 }
 
 // Dequeue removes and returns the next task from the queue
@@ -43,6 +45,7 @@ func (q *TaskQueue) Dequeue() (*Task, error) {
 
 	task := <-q.queue
 	q.size--
+	log.Printf("Task %s removed from the queue. Current queue size: %d\n", task.ID, q.size)
 	return task, nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // WorkerPool manages a pool of workers to process tasks concurrently
@@ -14,14 +15,14 @@ type WorkerPool struct {
 	queue       *TaskQueue
 	workerCount int
 	wg          sync.WaitGroup
-	stopCh      chan struct{}
+	stopChan    chan struct{}
 }
 
 func NewWorkerPool(queue *TaskQueue, workerCount int) *WorkerPool {
 	return &WorkerPool{
 		queue:       queue,
 		workerCount: workerCount,
-		stopCh:      make(chan struct{}),
+		stopChan:    make(chan struct{}),
 	}
 }
 
@@ -35,29 +36,30 @@ func (wp *WorkerPool) Start() {
 
 func (wp *WorkerPool) Stop() {
 	log.Println("Stopping worker pool...")
-	close(wp.stopCh)
+	close(wp.stopChan)
 	wp.wg.Wait()
 	log.Println("Worker pool stopped.")
 }
 
 // worker is a single worker goroutine that processes tasks
-func (wp *WorkerPool) worker(id int) {
-	defer wp.wg.Done()
-	log.Printf("Worker %d started.\n", id)
+func (wp *WorkerPool) worker(workerID int) {
+	log.Printf("Worker %d started.\n", workerID)
 
 	for {
 		select {
-		case <-wp.stopCh: // Stop signal received
-			log.Printf("Worker %d stopping...\n", id)
+		case <-wp.stopChan:
+			log.Printf("Worker %d stopping...\n", workerID)
+			wp.wg.Done() // Signal the WaitGroup
 			return
 		default:
 			task, err := wp.queue.Dequeue()
 			if err != nil {
-				// Queue is empty; let the worker wait for a task
+				// Queue is empty; wait before retrying
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 
-			wp.processTask(id, task)
+			wp.processTask(workerID, task) // Call processTask
 		}
 	}
 }
@@ -69,12 +71,15 @@ func (wp *WorkerPool) processTask(workerID int, task *Task) {
 
 	// Call the appropriate handler based on task type
 	var err error
+
+	log.Printf("Processing task: %s, Type: %s\n", task.ID, task.Type)
+
 	switch task.Type {
 	case "Summarization":
 		err = handleSummarization(task)
 	case "Categorization":
 		err = handleCategorization(task)
-	case "Sentiment Analysis":
+	case "Sentiment":
 		err = handleSentimentAnalysis(task)
 	default:
 		err = fmt.Errorf("unknown task type: %s", task.Type)

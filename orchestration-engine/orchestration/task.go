@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"log"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Task struct {
 	Payload   interface{}
 	State     TaskState
 	Retries   int
+	Result    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -53,4 +55,29 @@ func (t *Task) MarkFailed() {
 func (t *Task) IncrementRetries() {
 	t.Retries++
 	t.UpdatedAt = time.Now()
+}
+
+func ProcessTask(task *Task) {
+	task.MarkInProgress()
+	log.Printf("Processing task: %s, Type: %s\n", task.ID, task.Type)
+
+	// Simulate processing delay
+	time.Sleep(500 * time.Millisecond)
+
+	// Simulate task completion or failure based on type (for demo purposes)
+	switch task.Type {
+	case "Summarization":
+		task.Payload = "Summarized content for: " + task.Payload.(string)
+	case "Categorization":
+		task.Payload = "Categorized content for: " + task.Payload.(string)
+	case "Sentiment":
+		task.Payload = "Sentiment analysis result for: " + task.Payload.(string)
+	default:
+		task.MarkFailed()
+		log.Printf("Task %s failed: Unknown type\n", task.ID)
+		return
+	}
+
+	task.MarkCompleted()
+	log.Printf("Task %s completed. Result: %v\n", task.ID, task.Payload)
 }
