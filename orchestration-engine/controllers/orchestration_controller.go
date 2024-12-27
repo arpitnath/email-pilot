@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,15 +22,16 @@ var SampleEmails = []struct {
 }
 
 // SimulateOrchestrationController simulates orchestration using sample email data
-func SimulateOrchestrationController(c *gin.Context, engine *orchestration.OrchestrationEngine) {
+func SimulateOrchestrationController(c *gin.Context) {
+	engine := orchestration.NewOrchestrationEngine(10, 3) // New engine instance
+
 	// Start the orchestration engine
 	engine.Start()
-	defer engine.Stop()
 
 	// Add tasks to the engine
 	for _, email := range SampleEmails {
 		taskID := fmt.Sprintf("task-%s", email.ID)
-		task := orchestration.NewTask(taskID, "EmailProcessing", email)
+		task := orchestration.NewTask(taskID, "Summarization", email.Body)
 		if err := engine.AddTask(task); err != nil {
 			log.Printf("Failed to add task %s: %v\n", taskID, err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add task"})
@@ -37,9 +39,28 @@ func SimulateOrchestrationController(c *gin.Context, engine *orchestration.Orche
 		}
 	}
 
-	// Monitor the engine's queue
-	engine.Monitor()
+	// Wait for the queue to be processed
+	for {
+		queueSize := engine.QueueSize()
+		log.Printf("Waiting for queue to empty... Current size: %d\n", queueSize)
+		if queueSize == 0 {
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	// Stop the engine after processing
+	engine.Stop()
+
+	// Collect results
+	results := []string{}
+	for _, email := range SampleEmails {
+		results = append(results, fmt.Sprintf("Task %s for email %s completed successfully.", email.ID, email.Subject))
+	}
 
 	// Return success response
-	c.JSON(http.StatusOK, gin.H{"message": "Orchestration simulation started"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Orchestration simulation completed successfully.",
+		"results": results,
+	})
 }

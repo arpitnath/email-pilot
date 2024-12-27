@@ -3,7 +3,6 @@ package main
 import (
 	"email_pilot/config"
 	"email_pilot/controllers"
-	"email_pilot/orchestration"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -28,9 +27,6 @@ func main() {
 	}
 	defer psqlDB.Close()
 
-	// Initialize the orchestration engine
-	engine := orchestration.NewOrchestrationEngine(10, 3)
-
 	router := gin.Default()
 
 	router.GET("/auth", controllers.AuthController)
@@ -39,7 +35,7 @@ func main() {
 
 	// Simulate orchestration using sample data
 	router.POST("/simulate", func(c *gin.Context) {
-		controllers.SimulateOrchestrationController(c, engine)
+		controllers.SimulateOrchestrationController(c)
 	})
 
 	log.Println("Starting server on :8080")

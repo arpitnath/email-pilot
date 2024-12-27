@@ -32,19 +32,21 @@ func (q *TaskQueue) Enqueue(task *Task) error {
 	}
 }
 
+// Dequeue removes and returns the next task from the queue
 func (q *TaskQueue) Dequeue() (*Task, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	select {
-	case task := <-q.queue:
-		q.size--
-		return task, nil
-	default:
-		return nil, errors.New("task queue is empty")
+	if q.size == 0 {
+		return nil, errors.New("queue is empty")
 	}
+
+	task := <-q.queue
+	q.size--
+	return task, nil
 }
 
+// Size returns the current size of the task queue
 func (q *TaskQueue) Size() int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -55,4 +57,15 @@ func (q *TaskQueue) IsEmpty() bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	return q.size == 0
+}
+
+func (q *TaskQueue) Clear() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	// Drain the channel by reading all items
+	for len(q.queue) > 0 {
+		<-q.queue
+	}
+	q.size = 0
 }
