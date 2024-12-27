@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -66,14 +67,9 @@ func (wp *WorkerPool) worker(workerID int) {
 
 func (wp *WorkerPool) processTask(workerID int, task *Task) {
 	log.Printf("Worker %d processing task: %s\n", workerID, task.ID)
-
 	task.MarkInProgress()
 
-	// Call the appropriate handler based on task type
 	var err error
-
-	log.Printf("Processing task: %s, Type: %s\n", task.ID, task.Type)
-
 	switch task.Type {
 	case "Summarization":
 		err = handleSummarization(task)
@@ -99,23 +95,66 @@ func (wp *WorkerPool) processTask(workerID int, task *Task) {
 		return
 	}
 
+	// Add dynamic tasks for ReAct
+	for _, action := range task.DynamicActions {
+		log.Printf("Worker %d handling dynamic action: %s\n", workerID, action)
+		// Example: Enqueue a new task
+		if action == "Enqueue Notification Task" {
+			newTask := NewTask(fmt.Sprintf("notification-%s", task.ID), "Notification", task.Payload)
+			wp.queue.Enqueue(newTask)
+		}
+	}
+
 	task.MarkCompleted()
 	log.Printf("Worker %d completed task: %s\n", workerID, task.ID)
 }
 
 func handleSummarization(task *Task) error {
+	task.AddReasoningStep("Started summarization.")
 	payload := map[string]string{"prompt": task.Payload.(string)}
-	return callLLMService("http://localhost:8000/api/summarize", payload)
+
+	if err := callLLMService("http://localhost:8000/api/summarize", payload); err != nil {
+		task.AddReasoningStep("Failed summarization.")
+		return err
+	}
+
+	task.AddReasoningStep("Completed summarization.")
+	return nil
 }
 
 func handleCategorization(task *Task) error {
+	task.AddReasoningStep("Started categorization.")
 	payload := map[string]string{"prompt": task.Payload.(string)}
-	return callLLMService("http://localhost:8000/api/categorize", payload)
+
+	if err := callLLMService("http://localhost:8000/api/categorize", payload); err != nil {
+		task.AddReasoningStep("Failed categorization.")
+		return err
+	}
+
+	task.AddReasoningStep("Completed categorization.")
+	// Dynamically enqueue a notification if categorized as "High Priority"
+	if isHighPriority(task) {
+		task.AddDynamicAction("Enqueue Notification Task")
+	}
+	return nil
 }
 
 func handleSentimentAnalysis(task *Task) error {
+	task.AddReasoningStep("Started sentiment analysis.")
 	payload := map[string]string{"prompt": task.Payload.(string)}
-	return callLLMService("http://localhost:8000/api/sentiment", payload)
+
+	if err := callLLMService("http://localhost:8000/api/sentiment", payload); err != nil {
+		task.AddReasoningStep("Failed sentiment analysis.")
+		return err
+	}
+
+	task.AddReasoningStep("Completed sentiment analysis.")
+	return nil
+}
+
+func isHighPriority(task *Task) bool {
+	// Example logic to determine high priority
+	return strings.Contains(task.Payload.(string), "urgent")
 }
 
 // callLLMService sends a request to the LLM service and handles the response

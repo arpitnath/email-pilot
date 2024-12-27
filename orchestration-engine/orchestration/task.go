@@ -15,14 +15,32 @@ const (
 )
 
 type Task struct {
-	ID        string
-	Type      string
-	Payload   interface{}
-	State     TaskState
-	Retries   int
-	Result    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID             string
+	Type           string
+	Payload        interface{}
+	Result         string
+	State          TaskState
+	Retries        int
+	ReasoningSteps []string // For CoT
+	DynamicActions []string // For ReAct
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+// Update Result
+func (t *Task) UpdateResult(result string) {
+	t.Result = result
+	t.UpdatedAt = time.Now()
+}
+
+func (t *Task) AddReasoningStep(step string) {
+	t.ReasoningSteps = append(t.ReasoningSteps, step)
+	t.UpdatedAt = time.Now()
+}
+
+func (t *Task) AddDynamicAction(action string) {
+	t.DynamicActions = append(t.DynamicActions, action)
+	t.UpdatedAt = time.Now()
 }
 
 func NewTask(id string, taskType string, payload interface{}) *Task {
